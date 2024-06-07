@@ -1,10 +1,8 @@
 import React from 'react';
-import { toast } from 'react-toastify';
 
 const BookshelfPage = ({ bookshelf, removeBook }) => {
   const handleRemoveBook = (bookKey) => {
     removeBook(bookKey);
-    toast.error('Book removed from your shelf!');
   };
 
   return (

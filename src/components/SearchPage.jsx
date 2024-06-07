@@ -1,29 +1,45 @@
 import React, { useState } from 'react';
-import { toast } from 'react-toastify';
+import { useDebounce } from 'react-use';
 
 const SearchPage = ({ addBook }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [addedBookKey, setAddedBookKey] = useState(null);
 
-  const handleSearch = async (e) => {
-    setQuery(e.target.value);
-    if (e.target.value) {
-      const response = await fetch(`https://openlibrary.org/search.json?q=${e.target.value}&limit=10&page=1`);
+  const fetchBooks = async (query) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`https://openlibrary.org/search.json?q=${query}&limit=10&page=1`);
       const data = await response.json();
       setResults(data.docs);
-    } else {
-      setResults([]);
+    } catch (err) {
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
+
+  useDebounce(
+    () => {
+      if (query) {
+        fetchBooks(query);
+      } else {
+        setResults([]);
+      }
+    },
+    500,
+    [query]
+  );
 
   const handleAddBook = (book) => {
     addBook(book);
     setAddedBookKey(book.key);
-    toast.success('Book added to your shelf!');
     setTimeout(() => {
       setAddedBookKey(null);
-    }, 1000);
+    }, 2000);
   };
 
   return (
@@ -31,10 +47,12 @@ const SearchPage = ({ addBook }) => {
       <input
         type="text"
         value={query}
-        onChange={handleSearch}
+        onChange={(e) => setQuery(e.target.value)}
         className="input"
         placeholder="Search for books"
       />
+      {loading && <p>Loading...</p>}
+      {error && <p>{error}</p>}
       <div>
         {results.map(book => (
           <div key={book.key} className="bookCard">
